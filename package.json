@@ -1,0 +1,34 @@
+{
+  "name": "rastrador-gps",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jerrybadilla25/rastrador-gps.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jerrybadilla25/rastrador-gps/issues"
+  },
+  "homepage": "https://github.com/Jerrybadilla25/rastrador-gps#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.18.1",
+    "mongose": "^0.0.2-security",
+    "morgan": "^1.10.1",
+    "nodemon": "^3.1.10"
+  }
+}
