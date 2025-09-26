@@ -1,23 +1,50 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-  email: { 
-    type: String, 
-    required: true 
+
+  email: {
+    type: String,
+    required: true,
+    required: false,
+    trim: true,
+    lowercase: true,
   },
-  deviceId: { 
-    type: String, 
-    required: true 
+  password: {
+    type: String,
+    required: false,
+    minlength: 6,
   },
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
+  deviceId: {
+    type: String,
+    required: true,
+    unique: true,
   },
-  lastActive: { 
-    type: Date, 
-    default: Date.now 
-  }
+  name: {
+    type: String,
+    required: false,
+    trim: true,
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user',
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  lastActive: {
+    type: Date,
+    default: Date.now,
+  },
+}, {
+  timestamps: true
 });
+
 
 // Crear índice compuesto para email + deviceId (debe ser único la combinación)
 userSchema.index({ email: 1, deviceId: 1 }, { unique: true });

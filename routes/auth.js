@@ -14,6 +14,7 @@ const isValidEmail = (email) => {
 // Validar/Crear dispositivo
 // -----------------------------
 router.post("/device", async (req, res) => {
+  
   try {
     const { email, deviceId } = req.body;
 
@@ -42,7 +43,8 @@ router.post("/device", async (req, res) => {
     }
 
     // Buscar si ya existe un usuario con ese email y deviceId
-    let user = await User.findOne({ email, deviceId });
+    let user = await User.findOne({ deviceId });
+    console.log({user});
 
     if (!user) {
       // Si no existe, crear uno nuevo
