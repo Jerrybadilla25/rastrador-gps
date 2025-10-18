@@ -3,9 +3,12 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
+import cron from "node-cron";
 
 import authRoutes from "./routes/auth.js";
 import positionRoutes from "./routes/position.js";
+import cleanupRoutes from "./routes/cleanup.js";
+import Position from "./models/position.js";
 
 dotenv.config();
 
@@ -51,6 +54,70 @@ app.use((req, res, next) => {
   next();
 });
 
+// ========================================
+// 🗑️ FUNCIÓN DE LIMPIEZA AUTOMÁTICA
+// ========================================
+async function cleanOldPositions() {
+  try {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    console.log(`🧹 [${new Date().toISOString()}] Iniciando limpieza de posiciones antiguas...`);
+    console.log(`📅 Eliminando posiciones anteriores a: ${sevenDaysAgo.toISOString()}`);
+    
+    const result = await Position.deleteMany({
+      timestamp: { $lt: sevenDaysAgo }
+    });
+    
+    if (result.deletedCount > 0) {
+      console.log(`✅ Limpieza completada: ${result.deletedCount} posiciones eliminadas`);
+    } else {
+      console.log(`ℹ️  No hay posiciones antiguas para eliminar`);
+    }
+    
+    // Mostrar estadísticas actuales
+    const totalPositions = await Position.countDocuments();
+    const oldestPosition = await Position.findOne().sort({ timestamp: 1 });
+    const newestPosition = await Position.findOne().sort({ timestamp: -1 });
+    
+    console.log(`📊 Estadísticas actuales:`);
+    console.log(`   - Total de posiciones: ${totalPositions}`);
+    if (oldestPosition) {
+      console.log(`   - Posición más antigua: ${oldestPosition.timestamp.toISOString()}`);
+    }
+    if (newestPosition) {
+      console.log(`   - Posición más reciente: ${newestPosition.timestamp.toISOString()}`);
+    }
+    
+    return {
+      deletedCount: result.deletedCount,
+      totalPositions,
+      oldestPosition: oldestPosition?.timestamp,
+      newestPosition: newestPosition?.timestamp
+    };
+    
+  } catch (error) {
+    console.error('❌ Error en limpieza automática:', error);
+    throw error;
+  }
+}
+
+// Exportar la función para usarla en las rutas
+export { cleanOldPositions };
+
+// ========================================
+// 📅 CONFIGURAR CRON JOB
+// ========================================
+// Ejecutar todos los días a las 3:00 AM
+cron.schedule('0 3 * * *', () => {
+  console.log('⏰ Cron job activado: Ejecutando limpieza programada');
+  cleanOldPositions();
+}, {
+  timezone: "America/Costa_Rica" // Ajusta según tu zona horaria
+});
+
+console.log('⏰ Cron job configurado: Limpieza diaria a las 3:00 AM (America/Costa_Rica)');
+
 // Conexión a MongoDB con mejor logging
 mongoose.connect(process.env.MONGODB_URI, { 
   useNewUrlParser: true, 
@@ -59,6 +126,10 @@ mongoose.connect(process.env.MONGODB_URI, {
   .then(() => {
     console.log("🗄️  MongoDB conectado exitosamente");
     console.log(`📊 Database: ${mongoose.connection.name}`);
+    
+    // Ejecutar limpieza inicial al iniciar el servidor
+    console.log('🚀 Ejecutando limpieza inicial...');
+    cleanOldPositions();
   })
   .catch(err => {
     console.error("❌ Error en MongoDB:", err);
@@ -77,6 +148,7 @@ mongoose.connection.on('disconnected', () => {
 // Rutas
 app.use("/auth", authRoutes);
 app.use("/api/position", positionRoutes);
+app.use("/api/cleanup", cleanupRoutes); // 🗑️ Rutas de limpieza manual
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -87,8 +159,6 @@ app.get('/health', (req, res) => {
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
 });
-
-// 404 handler
 
 // Global error handler
 app.use((err, req, res, next) => {
@@ -115,24 +185,3 @@ app.listen(PORT, () => {
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📱 CORS habilitado para desarrollo`);
 });
-
-
-
-
-/*
-// 404 handler
-app.use('*', (req, res) => {
-  console.warn(`🔍 404 - Route not found: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({
-    ok: false,
-    message: 'Endpoint not found',
-    availableRoutes: [
-      'POST /auth/device',
-      'GET /auth/verify',
-      'POST /position/',
-      'GET /position/',
-      'GET /health'
-    ]
-  });
-});
-*/
